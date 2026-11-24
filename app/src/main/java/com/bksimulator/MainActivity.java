@@ -19,6 +19,8 @@ import java.util.zip.ZipOutputStream;
 public class MainActivity extends Activity {
     private static final int PICK_ZIP = 101;
     private static final int SAVE_ZIP = 102;
+    private static final int PICK_AUDIO = 103;
+    private String pendingAudioKey = "";
     private WebView web;
     private File packageDir;
     private JSONObject currentConfig = new JSONObject();
@@ -84,6 +86,15 @@ public class MainActivity extends Activity {
                 });
             } catch (Exception e) { toast("Не удалось подготовить ZIP: " + e.getMessage()); }
         }
+        @JavascriptInterface public void pickAudio(String eventKey) {
+            pendingAudioKey = eventKey;
+            runOnUiThread(() -> {
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("audio/*");
+                startActivityForResult(i, PICK_AUDIO);
+            });
+        }
         @JavascriptInterface public void play(String filename) {
             runOnUiThread(() -> playAudio(filename));
         }
@@ -98,7 +109,29 @@ public class MainActivity extends Activity {
         try {
             if (requestCode == PICK_ZIP) importArchive(data.getData());
             if (requestCode == SAVE_ZIP) writeArchive(data.getData());
+            if (requestCode == PICK_AUDIO) importAudio(data.getData());
         } catch (Exception e) { toast("Ошибка: " + e.getMessage()); }
+    }
+
+    private void importAudio(android.net.Uri uri) throws Exception {
+        String display = "audio_" + System.currentTimeMillis() + ".bin";
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            String mime = getContentResolver().getType(uri);
+            String ext = "mp3";
+            if (mime != null && mime.contains("wav")) ext = "wav";
+            else if (mime != null && (mime.contains("ogg") || mime.contains("opus"))) ext = "ogg";
+            else if (mime != null && mime.contains("mp4")) ext = "m4a";
+            display = "audio_" + System.currentTimeMillis() + "." + ext;
+            File target = new File(packageDir, display);
+            try (OutputStream out = new FileOutputStream(target)) {
+                byte[] b = new byte[8192]; int n; long total = 0;
+                while ((n = in.read(b)) > 0) { total += n; if (total > 50L*1024*1024) throw new IOException("Аудиофайл больше 50 МБ"); out.write(b,0,n); }
+            }
+        }
+        String key = pendingAudioKey;
+        String file = display;
+        runOnUiThread(() -> web.evaluateJavascript("window.onAudioPicked && window.onAudioPicked(" + JSONObject.quote(key) + "," + JSONObject.quote(file) + ")", null));
+        toast("Аудиофайл добавлен: " + display);
     }
 
     private void importArchive(android.net.Uri uri) throws Exception {
