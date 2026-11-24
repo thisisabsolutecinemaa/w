@@ -45,6 +45,7 @@ function render(){
   const edit=document.createElement("div");edit.className="event";
   const grid=document.createElement("div");grid.className="eventgrid";
   grid.append(field("Ключ события",key,v=>renameEvent(key,v)),field("Текст события",event.name||"",v=>config.events[key].name=v),field("Аудиофайл в ZIP",event.file||"",v=>config.events[key].file=v));
+  const audio=document.createElement("button");audio.textContent="＋ Выбрать аудиофайл с телефона";audio.onclick=()=>BK.pickAudio(key);edit.append(grid,audio);
   const del=document.createElement("button");del.className="danger";del.textContent="Удалить событие";del.onclick=()=>{delete config.events[key];render()};
   edit.append(grid,del);$("eventEditor").append(edit);
  });
@@ -59,6 +60,7 @@ function exportPackage(){saveBuilder();BK.exportZip(JSON.stringify(config))}
 function applyJson(){try{const next=JSON.parse($("jsonEditor").value);validate(next);config=next;render();$("jsonStatus").textContent="JSON успешно применён"}catch(e){$("jsonStatus").textContent="Ошибка: "+e.message}}
 function formatJson(){try{$("jsonEditor").value=JSON.stringify(JSON.parse($("jsonEditor").value),null,2);$("jsonStatus").textContent="Форматирование выполнено"}catch(e){$("jsonStatus").textContent="Ошибка JSON: "+e.message}}
 function validate(v){if(!v||v.formatVersion!==1||!v.events||typeof v.events!=="object"||Array.isArray(v.events))throw Error("Ожидается formatVersion: 1 и объект events");for(const [k,e] of Object.entries(v.events)){if(!e||typeof e.name!=="string"||typeof e.file!=="string")throw Error("У события "+k+" должны быть name и file (строки)")}}
+window.onAudioPicked=function(key,filename){if(config.events[key]){config.events[key].file=filename;render();setStatus("Аудио добавлено: "+filename)}};
 window.onBkImported=function(raw){try{const next=JSON.parse(raw);validate(next);config=next;render();setStatus("Импортирован: "+(config.name||config.id))}catch(e){setStatus("Не удалось прочитать конфигурацию: "+e.message)}};
 document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));btn.classList.add("active");["sim","builder","json"].forEach(id=>$(id).classList.toggle("hidden",id!==btn.dataset.tab))}));
 render();
