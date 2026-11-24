@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827"><title>BK Simulator</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#26364d;--muted:#91a2b9;--cyan:#4dd7d0;--blue:#5b8cff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -10%,#203b59 0,transparent 38%),var(--bg);color:#f2f6fc;font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:26px 20px 18px;max-width:850px;margin:auto}header small{color:var(--cyan);font-weight:800;letter-spacing:2px}h1{font-size:29px;margin:5px 0}header p{color:var(--muted);margin:4px 0}
+main{max-width:850px;margin:auto;padding:0 16px 40px}.tabs{display:flex;gap:8px;overflow:auto;padding:4px 0 14px}.tab,button{border:1px solid var(--line);border-radius:12px;background:#18263a;color:#eaf2ff;padding:12px 15px;font-weight:700;white-space:nowrap}.tab.active,button.primary{background:linear-gradient(135deg,#087f88,#2464c7);border-color:transparent}.panel{background:linear-gradient(145deg,#172438,#111b2b);border:1px solid var(--line);border-radius:18px;padding:17px;margin:0 0 14px;box-shadow:0 12px 35px #0003}.panel h2{font-size:18px;margin:0 0 14px}.muted{color:var(--muted);font-size:13px}.field{display:grid;gap:6px;margin:12px 0}label{font-size:13px;color:#b9c9dd}input,textarea{width:100%;background:#0c1625;border:1px solid #30435d;border-radius:10px;color:white;padding:12px;font:inherit;min-width:0}textarea{min-height:190px;font:13px ui-monospace,monospace;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.actions button{flex:1}.event{border:1px solid #30415a;background:#101b2b;border-radius:14px;padding:13px;margin:10px 0}.eventtop{display:flex;justify-content:space-between;align-items:center;gap:8px}.eventtop strong{color:var(--cyan)}.eventgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.eventgrid .field{min-width:0}.danger{background:#3b2029;border-color:#693340}.screen{border:1px solid #35536b;border-radius:16px;padding:18px;background:linear-gradient(130deg,#0a1d29,#132e39);text-align:center;margin-bottom:14px}.screen .display{font-size:clamp(21px,5vw,32px);font-weight:800;color:#8ef4db;letter-spacing:.5px}.screen .sub{color:#9db5c6;font-size:13px;margin-top:6px}.hidden{display:none!important}.status{color:var(--cyan);font-size:13px;margin-top:10px;min-height:18px}
+@media(max-width:520px){.eventgrid{grid-template-columns:1fr}.actions button{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<header><small>ANDROID • OFFLINE • ZIP / JSON</small><h1>BK Simulator</h1><p>Конструктор и имитатор бортовых компьютеров</p></header>
+<main>
+<nav class="tabs"><button class="tab active" data-tab="sim">Имитатор</button><button class="tab" data-tab="builder">Конструктор</button><button class="tab" data-tab="json">JSON</button></nav>
+<section id="sim">
+<div class="screen"><div class="sub" id="screenTitle">МОЙ БОРТОВОЙ КОМПЬЮТЕР</div><div class="display" id="screenEvent">Готов к работе</div><div class="sub" id="screenMeta">Выберите событие для проверки звука</div></div>
+<div class="panel"><h2>События БК</h2><div id="simEvents"></div><div class="muted">Нажмите «Воспроизвести», чтобы проверить назначенный аудиофайл.</div></div>
+<div class="panel"><h2>Пакет бортового компьютера</h2><p class="muted">Импортируйте ZIP с bk.json и аудиофайлами или экспортируйте текущую конфигурацию.</p><div class="actions"><button class="primary" onclick="BK.importZip()">Импортировать ZIP</button><button onclick="exportPackage()">Экспортировать ZIP</button></div><div class="status" id="status"></div></div>
+</section>
+<section id="builder" class="hidden">
+<div class="panel"><h2>Параметры компьютера</h2><div class="field"><label>Название БК</label><input id="bkName" value="Мой бортовой компьютер"></div><div class="field"><label>ID пакета (латиница)</label><input id="bkId" value="my-bk"></div><div class="field"><label>Автор</label><input id="bkAuthor" placeholder="Ваше имя или команда"></div></div>
+<div class="panel"><h2>События и звуки</h2><p class="muted">У каждого события есть ключ, отображаемое сообщение и имя аудиофайла внутри ZIP.</p><div id="eventEditor"></div><div class="actions"><button class="primary" onclick="addEvent()">＋ Добавить событие</button></div></div>
+<div class="actions"><button class="primary" onclick="saveBuilder()">Сохранить конфигурацию</button><button onclick="exportPackage()">Собрать ZIP</button></div>
+</section>
+<section id="json" class="hidden"><div class="panel"><h2>Редактор bk.json</h2><p class="muted">Можно редактировать JSON напрямую. Формат: formatVersion = 1, events — объект событий.</p><textarea id="jsonEditor" spellcheck="false"></textarea><div class="actions"><button class="primary" onclick="applyJson()">Применить JSON</button><button onclick="formatJson()">Форматировать</button></div><div class="status" id="jsonStatus"></div></div></section>
+</main>
+<script>
+let config={formatVersion:1,id:"my-bk",name:"Мой бортовой компьютер",author:"",events:{stop:{name:"Остановка",file:""},nextStation:{name:"Следующая станция",file:""}}};
+const $=id=>document.getElementById(id);
+function clone(v){return JSON.parse(JSON.stringify(v))}
+function setStatus(s){$("status").textContent=s}
+function render(){
+ $("screenTitle").textContent=(config.name||"БОРТОВОЙ КОМПЬЮТЕР").toUpperCase();
+ $("simEvents").innerHTML="";$("eventEditor").innerHTML="";
+ Object.entries(config.events||{}).forEach(([key,event])=>{
+  const card=document.createElement("div");card.className="event";
+  const top=document.createElement("div");top.className="eventtop";
+  const title=document.createElement("strong");title.textContent=key;
+  const play=document.createElement("button");play.textContent="▶ Воспроизвести";play.onclick=()=>{ $("screenEvent").textContent=event.name||key;$("screenMeta").textContent=event.file||"Звук не назначен";if(event.file)BK.play(event.file);else BK.notifyMessage("Для события не указан аудиофайл")};
+  top.append(title,play);card.append(top);
+  const info=document.createElement("div");info.className="muted";info.textContent=(event.name||"Без названия")+" • "+(event.file||"без аудио");card.append(info);$("simEvents").append(card);
+  const edit=document.createElement("div");edit.className="event";
+  const grid=document.createElement("div");grid.className="eventgrid";
+  grid.append(field("Ключ события",key,v=>renameEvent(key,v)),field("Текст события",event.name||"",v=>config.events[key].name=v),field("Аудиофайл в ZIP",event.file||"",v=>config.events[key].file=v));
+  const del=document.createElement("button");del.className="danger";del.textContent="Удалить событие";del.onclick=()=>{delete config.events[key];render()};
+  edit.append(grid,del);$("eventEditor").append(edit);
+ });
+ $("bkName").value=config.name||"";$("bkId").value=config.id||"";$("bkAuthor").value=config.author||"";
+ $("jsonEditor").value=JSON.stringify(config,null,2);
+}
+function field(labelText,value,onchange){const wrap=document.createElement("div");wrap.className="field";const label=document.createElement("label");label.textContent=labelText;const input=document.createElement("input");input.value=value;input.addEventListener("change",()=>onchange(input.value));wrap.append(label,input);return wrap}
+function renameEvent(oldKey,newKey){newKey=newKey.trim();if(!newKey||newKey===oldKey)return;if(config.events[newKey]){BK.notifyMessage("Такой ключ уже существует");render();return}config.events[newKey]=config.events[oldKey];delete config.events[oldKey];render()}
+function addEvent(){let n=1,key="event";while(config.events[key])key="event"+(++n);config.events[key]={name:"Новое событие",file:""};render()}
+function saveBuilder(){config.name=$("bkName").value.trim()||"Без названия";config.id=$("bkId").value.trim().replace(/[^a-zA-Z0-9_-]/g,"-")||"my-bk";config.author=$("bkAuthor").value.trim();render();setStatus("Конфигурация сохранена в текущем проекте");}
+function exportPackage(){saveBuilder();BK.exportZip(JSON.stringify(config))}
+function applyJson(){try{const next=JSON.parse($("jsonEditor").value);validate(next);config=next;render();$("jsonStatus").textContent="JSON успешно применён"}catch(e){$("jsonStatus").textContent="Ошибка: "+e.message}}
+function formatJson(){try{$("jsonEditor").value=JSON.stringify(JSON.parse($("jsonEditor").value),null,2);$("jsonStatus").textContent="Форматирование выполнено"}catch(e){$("jsonStatus").textContent="Ошибка JSON: "+e.message}}
+function validate(v){if(!v||v.formatVersion!==1||!v.events||typeof v.events!=="object"||Array.isArray(v.events))throw Error("Ожидается formatVersion: 1 и объект events");for(const [k,e] of Object.entries(v.events)){if(!e||typeof e.name!=="string"||typeof e.file!=="string")throw Error("У события "+k+" должны быть name и file (строки)")}}
+window.onBkImported=function(raw){try{const next=JSON.parse(raw);validate(next);config=next;render();setStatus("Импортирован: "+(config.name||config.id))}catch(e){setStatus("Не удалось прочитать конфигурацию: "+e.message)}};
+document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));btn.classList.add("active");["sim","builder","json"].forEach(id=>$(id).classList.toggle("hidden",id!==btn.dataset.tab))}));
+render();
+</script>
+</body></html>
