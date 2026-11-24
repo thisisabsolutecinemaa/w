@@ -1,0 +1,59 @@
+name: Build BK Simulator APK
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build debug APK
+        run: gradle --no-daemon assembleDebug
+      - name: Create starter BK pack with sample audio
+        run: |
+          python3 - <<'PY'
+          import json, math, struct, wave, zipfile, os
+          os.makedirs('starter-bk', exist_ok=True)
+          def tone(path, freq, seconds=1.15):
+              rate=44100
+              with wave.open(path,'wb') as w:
+                  w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate)
+                  frames=[]
+                  for i in range(int(rate*seconds)):
+                      envelope=min(1,i/(rate*.03), (rate*seconds-i)/(rate*.08))
+                      sample=int(9500*max(0,envelope)*math.sin(2*math.pi*freq*i/rate))
+                      frames.append(struct.pack('<h',sample))
+                  w.writeframes(b''.join(frames))
+          tone('starter-bk/kiyevopecher.wav',660)
+          tone('starter-bk/kiyevopecher1.wav',880)
+          config={
+            "formatVersion":1,"id":"kiyvmetro","name":"Киевский метрополитен — пример",
+            "author":"BK Simulator",
+            "events":{
+              "stop":{"name":"Остановка: Киево-Печерская лавра","file":"kiyevopecher.wav"},
+              "nextStation":{"name":"Следующая станция","file":"kiyevopecher1.wav"}
+            }
+          }
+          with open('starter-bk/bk.json','w',encoding='utf-8') as f: json.dump(config,f,ensure_ascii=False,indent=2)
+          with zipfile.ZipFile('BK-Starter-KyivMetro.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in ('bk.json','kiyevopecher.wav','kiyevopecher1.wav'):
+                  z.write('starter-bk/'+name,name)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BK-Simulator-Android
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            BK-Starter-KyivMetro.zip
+          if-no-files-found: error
+          retention-days: 30
