@@ -10,18 +10,18 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x18232c);scene.fog=new THREE.Fog(0x18232c,25,100);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,200);camera.position.set(0,1.7,5);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;document.body.appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xbac9d4,0x29221c,2));const light=new THREE.DirectionalLight(0xffdfb1,2.2);light.position.set(-5,12,8);light.castShadow=true;scene.add(light);
+const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);const renderer=new THREE.WebGLRenderer({antialias:!isMobile,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.1:1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xbac9d4,0x29221c,2));const light=new THREE.DirectionalLight(0xffdfb1,1.35);light.position.set(-5,12,8);scene.add(light);
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(28,100),mat(0x77766f));floor.rotation.x=-Math.PI/2;floor.position.z=-28;floor.receiveShadow=true;scene.add(floor);
 function box(x,y,z,sx,sy,sz,color){const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
 box(-7,3,-28,1,6,100,0x4c5355);box(7,3,-28,1,6,100,0x4c5355);box(0,6,-28,14,1,100,0x343b40);
-for(let z=15;z>-75;z-=8){box(-4.5,2.5,z,.35,5,.5,0x66645d);box(4.5,2.5,z,.35,5,.5,0x66645d);const lamp=new THREE.PointLight(0xffdca0,18,13);lamp.position.set(0,5,z);scene.add(lamp)}
+function instancedBoxes(geometry,material,items){const mesh=new THREE.InstancedMesh(geometry,material,items.length);const dummy=new THREE.Object3D();items.forEach((p,i)=>{dummy.position.set(p[0],p[1],p[2]);dummy.scale.set(p[3],p[4],p[5]);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix)});mesh.instanceMatrix.needsUpdate=true;scene.add(mesh);return mesh}const pillarItems=[];for(let z=15;z>-75;z-=8){pillarItems.push([-4.5,2.5,z,.35,5,.5],[4.5,2.5,z,.35,5,.5])}instancedBoxes(new THREE.BoxGeometry(1,1,1),mat(0x66645d),pillarItems);for(let z=10;z>-70;z-=24){const lamp=new THREE.PointLight(0xffdca0,8,18);lamp.position.set(0,4.8,z);scene.add(lamp)}
 for(const x of [-.8,.8]){const rail=box(x,.12,-28,.12,.18,100,0x25292b);rail.material.metalness=.7}
-for(let z=12;z>-70;z-=2){box(-.8,.02,z,.22,.05,.12,0x5a5146);box(.8,.02,z,.22,.05,.12,0x5a5146)}
+const sleeperItems=[];for(let z=12;z>-70;z-=2){sleeperItems.push([-.8,.02,z,.22,.05,.12],[.8,.02,z,.22,.05,.12])}instancedBoxes(new THREE.BoxGeometry(1,1,1),mat(0x5a5146),sleeperItems);
 // platform edge + tiled columns
 box(-3.1,.12,-28,.12,.22,100,0xd1ae59);box(3.1,.12,-28,.12,.22,100,0xd1ae59);
-for(let z=10;z>-60;z-=12){box(-3.9,1.7,z,.5,3.4,.55,0x8b8980);box(3.9,1.7,z,.5,3.4,.55,0x8b8980)}
+const stationPillars=[];for(let z=10;z>-60;z-=12){stationPillars.push([-3.9,1.7,z,.5,3.4,.55],[3.9,1.7,z,.5,3.4,.55])}instancedBoxes(new THREE.BoxGeometry(1,1,1),mat(0x8b8980),stationPillars);
 // tram model assembled from geometry
 const tram=new THREE.Group();scene.add(tram);tram.position.set(0,0,-15);
 const body=new THREE.Mesh(new THREE.BoxGeometry(2.6,2.6,8),mat(0x9b2928));body.position.y=1.7;body.castShadow=true;tram.add(body);
@@ -38,6 +38,6 @@ document.querySelector('#ride').onclick=()=>{driving=!driving;document.querySele
 renderer.domElement.onpointerdown=e=>{drag=true;lastX=e.clientX;lastY=e.clientY};addEventListener('pointerup',()=>drag=false);renderer.domElement.onpointermove=e=>{if(drag){yaw-=(e.clientX-lastX)*.004;pitch=Math.max(-.8,Math.min(.8,pitch-(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY}};
 let loaded=0;const status=document.querySelector('#status'),fill=document.querySelector('#fill'),pct=document.querySelector('#pct');function progress(n,t){loaded=n;fill.style.width=n+'%';pct.textContent=n+'%';status.textContent=t}
 progress(35,'Создаём станцию «Металлургов»…');setTimeout(()=>progress(70,'Собираем трамвай…'),250);setTimeout(()=>progress(100,'Сцена готова'),550);setTimeout(()=>document.querySelector('#loader').remove(),1000);
-const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);if(!driving){const forward=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));const right=new THREE.Vector3(Math.cos(yaw),0,Math.sin(yaw));const speed=(running?5:2.5)*dt;camera.position.addScaledVector(forward,-joy.y*speed);camera.position.addScaledVector(right,joy.x*speed);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-5.5,5.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-72,14)}else{tram.position.z-=dt*4;camera.position.set(tram.position.x,3.5,tram.position.z+1.2);yaw=0}camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera)}animate();
+const clock=new THREE.Clock();let lastRender=0;function animate(now=0){requestAnimationFrame(animate);if(isMobile&&now-lastRender<33)return;lastRender=now;const dt=Math.min(clock.getDelta(),.04);if(!driving){const forward=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));const right=new THREE.Vector3(Math.cos(yaw),0,Math.sin(yaw));const speed=(running?5:2.5)*dt;camera.position.addScaledVector(forward,-joy.y*speed);camera.position.addScaledVector(right,joy.x*speed);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-5.5,5.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-72,14)}else{tram.position.z-=dt*4;camera.position.set(tram.position.x,3.5,tram.position.z+1.2);yaw=0}camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera)}animate();
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
