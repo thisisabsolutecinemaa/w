@@ -1,43 +1,98 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101820"><title>TRAM LIFE — In da Krivoy Rog</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#fff;font-family:system-ui,sans-serif;touch-action:none}canvas{display:block}.hud{position:fixed;z-index:2;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}.pill{background:#101820d9;border:1px solid #ffffff30;border-radius:12px;padding:10px 13px}.small{font-size:12px;color:#c5cbd0}#controls{position:fixed;z-index:3;bottom:18px;left:18px;right:18px;display:flex;justify-content:space-between;align-items:end}#stick{width:112px;height:112px;border:2px solid #ffffff70;background:#ffffff20;border-radius:50%;position:relative;touch-action:none}#knob{position:absolute;width:44px;height:44px;left:32px;top:32px;border-radius:50%;background:#ffffffa8}.buttons{display:flex;gap:8px}button{border:1px solid #ffffff55;border-radius:12px;padding:12px 15px;background:#17242ee8;color:white;font-weight:700;min-height:48px}#loader{position:fixed;z-index:5;inset:0;background:#080e14;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);padding:24px;border:1px solid #ffffff30;border-radius:20px;background:linear-gradient(145deg,#24323d,#101820)}.brand{font-size:25px;font-weight:900}.brand span{display:block;color:#e0b68e;font-size:15px}.bar{height:9px;border-radius:9px;background:#3b454d;margin:20px 0 9px;overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#922d2b,#e5b27f);transition:width .25s}.hint{position:fixed;z-index:2;bottom:145px;left:50%;transform:translateX(-50%);background:#101820d9;border-radius:10px;padding:8px 12px;white-space:nowrap;font-size:13px}@media(max-height:560px){#stick{width:86px;height:86px}#knob{left:20px;top:20px}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#fff;font-family:system-ui,sans-serif;touch-action:none}canvas{display:block}
+.hud{position:fixed;z-index:2;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}.pill{background:#101820df;border:1px solid #ffffff35;border-radius:12px;padding:8px 11px;backdrop-filter:blur(8px)}.small{font-size:11px;color:#c5cbd0}.speed{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
+#controls{position:fixed;z-index:3;bottom:14px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:end;gap:12px}#stick{width:104px;height:104px;flex:none;border:2px solid #ffffff70;background:#ffffff20;border-radius:50%;position:relative;touch-action:none}#knob{position:absolute;width:40px;height:40px;left:30px;top:30px;border-radius:50%;background:#ffffffb8;pointer-events:none}.buttons{display:flex;gap:7px;align-items:end;flex-wrap:wrap;justify-content:flex-end}button{border:1px solid #ffffff55;border-radius:12px;padding:11px 13px;background:#17242eef;color:white;font-weight:800;min-height:46px;touch-action:none}button:active,.active{background:#8e2928}#driveControls{display:none;gap:7px}body.driving #walkControls{display:none}body.driving #driveControls{display:flex}#throttle{background:#246044}#brake{background:#87302d}
+#hint{position:fixed;z-index:2;bottom:132px;left:50%;transform:translateX(-50%);background:#101820e8;border:1px solid #ffffff25;border-radius:10px;padding:7px 11px;white-space:nowrap;font-size:12px;max-width:92%;text-align:center}
+#loader{position:fixed;z-index:5;inset:0;background:#080e14;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);padding:24px;border:1px solid #ffffff30;border-radius:20px;background:linear-gradient(145deg,#24323d,#101820)}.brand{font-size:25px;font-weight:900}.brand span{display:block;color:#e0b68e;font-size:15px}.bar{height:9px;border-radius:9px;background:#3b454d;margin:20px 0 9px;overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#922d2b,#e5b27f);transition:width .2s}
+@media(max-height:560px){#stick{width:82px;height:82px}#knob{left:21px;top:21px}#hint{bottom:104px}button{min-height:40px;padding:8px 10px}}
 </style></head><body>
-<div class="hud"><div class="pill"><b>TRAM LIFE</b><div class="small">КРИВОЙ РОГ • МАРШРУТ 1</div></div><div class="pill small" id="station">СТАНЦИЯ: МЕТАЛЛУРГОВ</div></div>
-<div class="hint" id="hint">Джойстик — движение • свайп — обзор</div><div id="controls"><div id="stick"><div id="knob"></div></div><div class="buttons"><button id="ride">ЕХАТЬ</button><button id="run">БЕГ</button></div></div>
-<div id="loader"><div class="card"><div class="brand">TRAM LIFE<span>In da Krivoy Rog</span></div><p id="status">Загрузка 3D-сцены…</p><div class="bar"><div class="fill" id="fill"></div></div><b id="pct">0%</b><p class="small">Подготавливаем станцию и трамвай. Для первого запуска нужен интернет.</p></div></div>
+<div class="hud"><div class="pill"><b>TRAM LIFE</b><div class="small">КРИВОЙ РОГ • ЛИНИЯ МЕТРОТРАМА</div></div><div class="pill" style="text-align:right"><div class="small" id="station">СТАНЦИЯ: МЕТАЛЛУРГОВ</div><div class="speed"><span id="speed">0</span> <span class="small">км/ч</span></div></div></div>
+<div id="hint">Подойди к трамваю и нажми «ЗАЙТИ» • Джойстик — ходьба</div>
+<div id="controls"><div id="stick"><div id="knob"></div></div><div class="buttons" id="walkControls"><button id="run">БЕГ</button><button id="ride">ЗАЙТИ В ТРАМВАЙ</button></div><div class="buttons" id="driveControls"><button id="leave">ВЫЙТИ</button><button id="brake">ТОРМОЗ</button><button id="throttle">ХОД</button></div></div>
+<div id="loader"><div class="card"><div class="brand">TRAM LIFE<span>In da Krivoy Rog</span></div><p id="status">Построение станции…</p><div class="bar"><div class="fill" id="fill"></div></div><b id="pct">0%</b><p class="small">Загрузка 3D-сцены и проверка геометрии. Для первого запуска нужен интернет.</p></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x18232c);scene.fog=new THREE.Fog(0x18232c,25,100);
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,200);camera.position.set(0,1.7,5);
-const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);const renderer=new THREE.WebGLRenderer({antialias:!isMobile,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.1:1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xbac9d4,0x29221c,2));const light=new THREE.DirectionalLight(0xffdfb1,1.35);light.position.set(-5,12,8);scene.add(light);
-const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(28,100),mat(0x77766f));floor.rotation.x=-Math.PI/2;floor.position.z=-28;floor.receiveShadow=true;scene.add(floor);
-function box(x,y,z,sx,sy,sz,color){const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
-box(-7,3,-28,1,6,100,0x4c5355);box(7,3,-28,1,6,100,0x4c5355);box(0,6,-28,14,1,100,0x343b40);
-function instancedBoxes(geometry,material,items){const mesh=new THREE.InstancedMesh(geometry,material,items.length);const dummy=new THREE.Object3D();items.forEach((p,i)=>{dummy.position.set(p[0],p[1],p[2]);dummy.scale.set(p[3],p[4],p[5]);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix)});mesh.instanceMatrix.needsUpdate=true;scene.add(mesh);return mesh}const pillarItems=[];for(let z=15;z>-75;z-=8){pillarItems.push([-4.5,2.5,z,.35,5,.5],[4.5,2.5,z,.35,5,.5])}instancedBoxes(new THREE.BoxGeometry(1,1,1),mat(0x66645d),pillarItems);for(let z=10;z>-70;z-=24){const lamp=new THREE.PointLight(0xffdca0,8,18);lamp.position.set(0,4.8,z);scene.add(lamp)}
-for(const x of [-.8,.8]){const rail=box(x,.12,-28,.12,.18,100,0x25292b);rail.material.metalness=.7}
-const sleeperItems=[];for(let z=12;z>-70;z-=2){sleeperItems.push([-.8,.02,z,.22,.05,.12],[.8,.02,z,.22,.05,.12])}instancedBoxes(new THREE.BoxGeometry(1,1,1),mat(0x5a5146),sleeperItems);
-// platform edge + tiled columns
-box(-3.1,.12,-28,.12,.22,100,0xd1ae59);box(3.1,.12,-28,.12,.22,100,0xd1ae59);
-const stationPillars=[];for(let z=10;z>-60;z-=12){stationPillars.push([-3.9,1.7,z,.5,3.4,.55],[3.9,1.7,z,.5,3.4,.55])}instancedBoxes(new THREE.BoxGeometry(1,1,1),mat(0x8b8980),stationPillars);
-// tram model assembled from geometry
-const tram=new THREE.Group();scene.add(tram);tram.position.set(0,0,-15);
-const body=new THREE.Mesh(new THREE.BoxGeometry(2.6,2.6,8),mat(0x9b2928));body.position.y=1.7;body.castShadow=true;tram.add(body);
-const roof=new THREE.Mesh(new THREE.BoxGeometry(2.55,.22,7.8),mat(0xb8b0a2));roof.position.y=3.02;tram.add(roof);
-for(let z=-3;z<=3;z+=1.5){const win=new THREE.Mesh(new THREE.BoxGeometry(2.63,.85,1.15),mat(0x253f4b,.3));win.position.set(0,2.15,z);tram.add(win)}
-for(const x of [-.8,.8])for(const z of [-2.5,2.5]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.18,16),mat(0x16191b));wheel.rotation.z=Math.PI/2;wheel.position.set(x,.55,z);tram.add(wheel)}
-box(0,.01,-28,.08,.04,100,0x17191b);
-const sign=box(-3.7,2.9,-5,2.6,1.1,.15,0x263b43);const signText=document.createElement('canvas');signText.width=512;signText.height=128;const c=signText.getContext('2d');c.fillStyle='#263b43';c.fillRect(0,0,512,128);c.fillStyle='white';c.font='bold 48px sans-serif';c.fillText('МЕТАЛЛУРГОВ',22,80);const tex=new THREE.CanvasTexture(signText);sign.material=new THREE.MeshBasicMaterial({map:tex});
-let joy={x:0,y:0},running=false,driving=false,yaw=0,pitch=0,lastX=0,lastY=0,drag=false;const stick=document.querySelector('#stick'),knob=document.querySelector('#knob');
-function moveJoy(e){const r=stick.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,l=Math.max(1,Math.hypot(dx,dy)),k=Math.min(1,42/l);joy={x:dx/42*k,y:dy/42*k};knob.style.left=32+dx*k+'px';knob.style.top=32+dy*k+'px'}
-stick.onpointerdown=e=>{stick.setPointerCapture(e.pointerId);moveJoy(e)};stick.onpointermove=e=>{if(e.buttons)moveJoy(e)};stick.onpointerup=stick.onpointercancel=()=>{joy={x:0,y:0};knob.style.left='32px';knob.style.top='32px'};
-document.querySelector('#run').onpointerdown=()=>running=true;document.querySelector('#run').onpointerup=document.querySelector('#run').onpointerleave=()=>running=false;
-document.querySelector('#ride').onclick=()=>{driving=!driving;document.querySelector('#ride').textContent=driving?'ВЫЙТИ':'ЕХАТЬ';document.querySelector('#hint').textContent=driving?'Вы за рулём трамвая':'Вы вышли из кабины'};
-renderer.domElement.onpointerdown=e=>{drag=true;lastX=e.clientX;lastY=e.clientY};addEventListener('pointerup',()=>drag=false);renderer.domElement.onpointermove=e=>{if(drag){yaw-=(e.clientX-lastX)*.004;pitch=Math.max(-.8,Math.min(.8,pitch-(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY}};
-let loaded=0;const status=document.querySelector('#status'),fill=document.querySelector('#fill'),pct=document.querySelector('#pct');function progress(n,t){loaded=n;fill.style.width=n+'%';pct.textContent=n+'%';status.textContent=t}
-progress(35,'Создаём станцию «Металлургов»…');setTimeout(()=>progress(70,'Собираем трамвай…'),250);setTimeout(()=>progress(100,'Сцена готова'),550);setTimeout(()=>document.querySelector('#loader').remove(),1000);
-const clock=new THREE.Clock();let lastRender=0;function animate(now=0){requestAnimationFrame(animate);if(isMobile&&now-lastRender<33)return;lastRender=now;const dt=Math.min(clock.getDelta(),.04);if(!driving){const forward=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));const right=new THREE.Vector3(Math.cos(yaw),0,Math.sin(yaw));const speed=(running?5:2.5)*dt;camera.position.addScaledVector(forward,-joy.y*speed);camera.position.addScaledVector(right,joy.x*speed);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-5.5,5.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-72,14)}else{tram.position.z-=dt*4;camera.position.set(tram.position.x,3.5,tram.position.z+1.2);yaw=0}camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera)}animate();
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x151d25);scene.fog=new THREE.Fog(0x151d25,48,190);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.08,260);camera.position.set(0,1.7,7);
+const renderer=new THREE.WebGLRenderer({antialias:!mobile,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.25:1.8));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.shadowMap.enabled=!mobile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xc8d9e7,0x29221d,1.45));
+const keyLight=new THREE.DirectionalLight(0xffd7a2,2.1);keyLight.position.set(-8,13,12);keyLight.castShadow=!mobile;if(!mobile){keyLight.shadow.mapSize.set(1024,1024);keyLight.shadow.camera.left=-18;keyLight.shadow.camera.right=18;keyLight.shadow.camera.top=18;keyLight.shadow.camera.bottom=-18}scene.add(keyLight);
+const mat=(color,rough=.75,metal=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+const concrete=mat(0x777873,.92),wallMat=mat(0x454d51,.9),dark=mat(0x202629,.85),tile=mat(0x9a9990,.72),red=mat(0x9e2928,.42,.22),glass=mat(0x183541,.22,.35),steel=mat(0x555d61,.3,.8),gold=mat(0xd5b46a,.45,.25);
+function addMesh(g,m,x,y,z,parent=scene){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=!mobile;o.receiveShadow=true;parent.add(o);return o}
+function box(x,y,z,sx,sy,sz,m,parent=scene){return addMesh(new THREE.BoxGeometry(sx,sy,sz),m,x,y,z,parent)}
+function instanced(g,m,items){const mesh=new THREE.InstancedMesh(g,m,items.length),d=new THREE.Object3D();for(let i=0;i<items.length;i++){const p=items[i];d.position.set(p[0],p[1],p[2]);d.scale.set(p[3],p[4],p[5]);d.rotation.y=p[6]||0;d.updateMatrix();mesh.setMatrixAt(i,d.matrix)}mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=!mobile;mesh.receiveShadow=true;scene.add(mesh);return mesh}
+const routeStart=18,routeEnd=-230,routeLength=routeStart-routeEnd;
+box(0,-.55,-106,15,1.1,routeLength,concrete);box(-7.25,3,-106,.8,6.8,routeLength,wallMat);box(7.25,3,-106,.8,6.8,routeLength,wallMat);box(0,6.55,-106,14.8,.7,routeLength,dark);
+// station floor and track bed
+box(0,-.08,-106,3.7,.25,routeLength,dark);
+for(const x of [-.8,.8]){box(x,.12,-106,.14,.18,routeLength,steel);box(x,.205,-106,.045,.035,routeLength,gold)}
+const sleepers=[];for(let z=routeStart;z>routeEnd;z-=1.35)sleepers.push([0,.02,z,2.35,.13,.24]);instanced(new THREE.BoxGeometry(1,1,1),mat(0x574b40),sleepers);
+// tiled platform surfaces, tactile safety strips
+box(-3.85,.02,-106,3.8,.22,routeLength,concrete);box(3.85,.02,-106,3.8,.22,routeLength,concrete);
+for(const x of [-2.05,2.05])box(x,.15,-106,.13,.08,routeLength,gold);
+const tileRows=[];for(let z=routeStart;z>routeEnd;z-=1.1)for(const x of [-5.55,-4.65,4.65,5.55])tileRows.push([x,.145,z,.88,.025,.88]);instanced(new THREE.BoxGeometry(1,1,1),tile,tileRows);
+// high-detail repeating station columns: cylinder geometry with 32 radial segments
+const columnGeo=new THREE.CylinderGeometry(.38,.43,4.65,32,2,false);const columnPositions=[];for(let z=12;z>routeEnd;z-=12)for(const x of [-5.8,5.8])columnPositions.push([x,2.35,z,1,1,1]);
+const columns=new THREE.InstancedMesh(columnGeo,mat(0xaaa79d,.56,.12),columnPositions.length),dummy=new THREE.Object3D();columnPositions.forEach((p,i)=>{dummy.position.set(p[0],p[1],p[2]);dummy.updateMatrix();columns.setMatrixAt(i,dummy.matrix)});columns.castShadow=!mobile;scene.add(columns);
+for(let z=12;z>routeEnd;z-=12)for(const x of [-5.8,5.8]){addMesh(new THREE.CylinderGeometry(.48,.48,.16,32),gold,x,4.72,z);addMesh(new THREE.CylinderGeometry(.5,.5,.16,32),dark,x,.12,z)}
+// ceiling ribs and lamps, instanced to keep draw calls low
+const ribs=[];for(let z=12;z>routeEnd;z-=6)ribs.push([0,6.05,z,13.7,.16,.22]);instanced(new THREE.BoxGeometry(1,1,1),mat(0x596166,.65,.25),ribs);
+for(let z=8;z>routeEnd;z-=28){const l=new THREE.PointLight(0xffd7a0,mobile?5:9,24,2);l.position.set(0,5.65,z);scene.add(l);box(0,6.05,z,.65,.08,1.7,mat(0xffe2b3,.3))}
+ // signs and wall details
+function makeSign(text,z){const cv=document.createElement('canvas');cv.width=768;cv.height=180;const cx=cv.getContext('2d');cx.fillStyle='#172d38';cx.fillRect(0,0,768,180);cx.strokeStyle='#d9b16d';cx.lineWidth=8;cx.strokeRect(8,8,752,164);cx.fillStyle='#fff';cx.font='bold 62px sans-serif';cx.textAlign='center';cx.fillText(text,384,112);const tex=new THREE.CanvasTexture(cv);const board=box(-6.72,3.25,z, .08,1.55,5, new THREE.MeshStandardMaterial({map:tex,roughness:.55}));return board}
+makeSign('МЕТАЛЛУРГОВ',-18);makeSign('КРИВОЙ РОГ',-132);
+for(let z=15;z>routeEnd;z-=18){box(6.82,2.5,z,.12,1.2,2.4,mat(0x35434a));}
+// Tram: detailed procedural model, smooth round wheels, bogies, front windscreen and doors
+const tram=new THREE.Group();scene.add(tram);tram.position.set(0,0,-5);
+const chassis=box(0,1.0,0,2.48,.62,9.2,dark,tram);
+const lower=box(0,1.55,0,2.62,.48,9.6,red,tram);
+const shell=box(0,2.48,0,2.58,1.65,9.55,red,tram);
+const roof=box(0,3.36,0,2.48,.22,9.35,mat(0xc1bdb2,.55),tram);
+box(0,2.48,-4.79,2.24,1.35,.08,glass,tram);
+for(const side of [-1,1]){for(let z=-3.5;z<=3.5;z+=1.65){box(side*1.302,2.7,z, .035,.78,1.35,glass,tram);box(side*1.325,1.95,z,.04,.07,1.38,steel,tram)}
+box(side*1.32,2.1,.1,.05,1.8,.08,steel,tram);
+for(const z of [-3.1,3.1]){const bogie=box(side*.62,.72,z,.28,.5,1.65,steel,tram)}
+}
+for(const z of [-3.25,3.25])for(const x of [-1.22,1.22]){const wheel=addMesh(new THREE.CylinderGeometry(.39,.39,.22,32),dark,x,.68,z,tram);wheel.rotation.z=Math.PI/2;const hub=addMesh(new THREE.CylinderGeometry(.17,.17,.235,24),steel,x,.68,z,tram);hub.rotation.z=Math.PI/2}
+for(const x of [-.85,.85]){const lamp=addMesh(new THREE.SphereGeometry(.14,20,12),mat(0xffe5a3,.18),x,2.15,-4.88,tram);const spot=new THREE.PointLight(0xffd58b,1.3,13);spot.position.set(x,2.2,-5);tram.add(spot)}
+// roof equipment and pantograph-like detail
+box(0,3.58,.2,.55,.18,2.3,steel,tram);for(const x of [-.48,.48])box(x,3.75,.2,.08,.08,2.1,dark,tram);
+const doors=[];for(const side of [-1,1]){const door=box(side*1.315,2.35,-.2,.055,1.65,.9,mat(0x772423,.5),tram);doors.push(door)}
+// collision bounds use world-space axis-aligned boxes
+const obstacles=[{minX:-7.0,maxX:-6.6,minZ:routeEnd,maxZ:routeStart},{minX:6.6,maxX:7,minZ:routeEnd,maxZ:routeStart}];
+function overlaps(x,z,r=.34){return obstacles.some(o=>x+r>o.minX&&x-r<o.maxX&&z+r>o.minZ&&z-r<o.maxZ)}
+let player=new THREE.Vector3(0,0,7),yaw=0,pitch=0,joy={x:0,y:0},walking=true,running=false,driving=false,velocity=0,throttle=false,braking=false,tramZ=tram.position.z;
+const el=id=>document.getElementById(id),stick=el('stick'),knob=el('knob');
+function setJoy(e){const r=stick.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),k=Math.min(1,38/len);joy={x:dx/38*k,y:dy/38*k};knob.style.left=(r.width/2-20+dx*k)+'px';knob.style.top=(r.height/2-20+dy*k)+'px'}
+stick.onpointerdown=e=>{stick.setPointerCapture(e.pointerId);setJoy(e)};stick.onpointermove=e=>{if(e.buttons||e.pressure)setJoy(e)};stick.onpointerup=stick.onpointercancel=()=>{joy={x:0,y:0};knob.style.left='30px';knob.style.top='30px'};
+el('run').onpointerdown=()=>running=true;el('run').onpointerup=el('run').onpointerleave=()=>running=false;
+function enterTram(){const dist=Math.hypot(player.x-tram.position.x,player.z-tram.position.z);if(dist>9){el('hint').textContent='Подойди ближе к трамваю (до 9 метров)';return}driving=true;velocity=0;document.body.classList.add('driving');el('hint').textContent='ХОД — тяга • ТОРМОЗ — замедление • ВЫЙТИ — выйти на остановке';yaw=0}
+el('ride').onclick=enterTram;el('leave').onclick=()=>{if(Math.abs(velocity)>0.3){el('hint').textContent='Сначала полностью останови трамвай';return}driving=false;document.body.classList.remove('driving');player.set(tram.position.x+2.8,0,tram.position.z+1);el('hint').textContent='Вы на платформе. Подойди к трамваю, чтобы снова зайти.'};
+for(const [id,fn] of [['throttle',v=>throttle=v],['brake',v=>braking=v]]){el(id).onpointerdown=e=>{e.preventDefault();fn(true);el(id).classList.add('active')};for(const ev of ['pointerup','pointercancel','pointerleave'])el(id).addEventListener(ev,()=>{fn(false);el(id).classList.remove('active')})}
+const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE'&&!driving)enterTram()});addEventListener('keyup',e=>keys[e.code]=false);
+let lookPointer=null,lastX=0,lastY=0;renderer.domElement.addEventListener('pointerdown',e=>{lookPointer=e.pointerId;lastX=e.clientX;lastY=e.clientY});addEventListener('pointerup',()=>lookPointer=null);renderer.domElement.addEventListener('pointermove',e=>{if(lookPointer===e.pointerId){yaw-=(e.clientX-lastX)*.004;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-lastY)*.003,-.65,.65);lastX=e.clientX;lastY=e.clientY}});
+const stations=[{z:-18,name:'МЕТАЛЛУРГОВ'},{z:-132,name:'КОЛЬЦЕВАЯ'}];let stationIndex=0,stopHold=0;
+function updateHUD(){el('speed').textContent=String(Math.round(Math.abs(velocity)*3.6)).padStart(2,'0');el('station').textContent='СТАНЦИЯ: '+(stations[stationIndex]?.name||'ПЕРЕГОН')}
+let progress=0;const status=el('status'),fill=el('fill'),pct=el('pct');function load(n,t){progress=n;fill.style.width=n+'%';pct.textContent=n+'%';status.textContent=t}
+load(22,'Геометрия тоннеля и платформ…');setTimeout(()=>load(48,'Детализация станции и освещение…'),180);setTimeout(()=>load(76,'Сборка трамвая и коллизии…'),380);setTimeout(()=>load(100,'Проверка маршрута завершена'),650);setTimeout(()=>el('loader').remove(),1050);
+const clock=new THREE.Clock();let lastFrame=0;
+function animate(now=0){requestAnimationFrame(animate);if(mobile&&now-lastFrame<30)return;lastFrame=now;const dt=Math.min(clock.getDelta(),.04);
+if(!driving){const fwd=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,Math.sin(yaw));const sp=(running?5.1:2.7)*dt;const nx=player.x+right.x*joy.x*sp+fwd.x*(-joy.y)*sp,nz=player.z+right.z*joy.x*sp+fwd.z*(-joy.y)*sp;if(!overlaps(nx,player.z))player.x=THREE.MathUtils.clamp(nx,-6.1,6.1);if(!overlaps(player.x,nz))player.z=THREE.MathUtils.clamp(nz,routeEnd+2,routeStart-2);
+camera.position.set(player.x,1.68,player.z);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
+}else{
+const accelerating=throttle||keys['ArrowUp']||keys['KeyW'],stopping=braking||keys['ArrowDown']||keys['Space'];if(accelerating)velocity=Math.min(13.8,velocity+2.1*dt);else velocity=Math.max(0,velocity-.24*dt);if(stopping)velocity=Math.max(0,velocity-4.8*dt);
+let nextZ=tram.position.z-velocity*dt;
+// Track end collision and platform stop markers
+if(nextZ<routeEnd+7){nextZ=routeEnd+7;velocity=0}
+tram.position.z=nextZ;tramZ=nextZ;
+if(stationIndex<stations.length&&Math.abs(tram.position.z-stations[stationIndex].z)<1.5&&velocity<2.2){velocity=0;stopHold=3;stationIndex++;updateHUD();el('hint').textContent='Остановка. Можно выйти на платформу.'}
+camera.position.set(tram.position.x,2.72,tram.position.z-3.45);camera.rotation.order='YXZ';camera.rotation.set(-.02,0,0);
+}
+updateHUD();renderer.render(scene,camera)}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.25:1.8));renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
