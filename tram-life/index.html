@@ -25,14 +25,14 @@ const concrete=mat(0x777873,.92),wallMat=mat(0x454d51,.9),dark=mat(0x202629,.85)
 function addMesh(g,m,x,y,z,parent=scene){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=!mobile;o.receiveShadow=true;parent.add(o);return o}
 function box(x,y,z,sx,sy,sz,m,parent=scene){return addMesh(new THREE.BoxGeometry(sx,sy,sz),m,x,y,z,parent)}
 function instanced(g,m,items){const mesh=new THREE.InstancedMesh(g,m,items.length),d=new THREE.Object3D();for(let i=0;i<items.length;i++){const p=items[i];d.position.set(p[0],p[1],p[2]);d.scale.set(p[3],p[4],p[5]);d.rotation.y=p[6]||0;d.updateMatrix();mesh.setMatrixAt(i,d.matrix)}mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=!mobile;mesh.receiveShadow=true;scene.add(mesh);return mesh}
-const routeStart=18,routeEnd=-230,routeLength=routeStart-routeEnd;
-box(0,-.55,-106,15,1.1,routeLength,concrete);box(-7.25,3,-106,.8,6.8,routeLength,wallMat);box(7.25,3,-106,.8,6.8,routeLength,wallMat);box(0,6.55,-106,14.8,.7,routeLength,dark);
+const routeStart=18,routeEnd=-520,routeLength=routeStart-routeEnd,routeCenter=(routeStart+routeEnd)/2;
+box(0,-.55,routeCenter,15,1.1,routeLength,concrete);box(-7.25,3,routeCenter,.8,6.8,routeLength,wallMat);box(7.25,3,routeCenter,.8,6.8,routeLength,wallMat);box(0,6.55,routeCenter,14.8,.7,routeLength,dark);
 // station floor and track bed
-box(0,-.08,-106,3.7,.25,routeLength,dark);
-for(const x of [-.8,.8]){box(x,.12,-106,.14,.18,routeLength,steel);box(x,.205,-106,.045,.035,routeLength,gold)}
+box(0,-.08,routeCenter,3.7,.25,routeLength,dark);
+for(const x of [-.8,.8]){box(x,.12,routeCenter,.14,.18,routeLength,steel);box(x,.205,routeCenter,.045,.035,routeLength,gold)}
 const sleepers=[];for(let z=routeStart;z>routeEnd;z-=1.35)sleepers.push([0,.02,z,2.35,.13,.24]);instanced(new THREE.BoxGeometry(1,1,1),mat(0x574b40),sleepers);
 // tiled platform surfaces, tactile safety strips
-box(-3.85,.02,-106,3.8,.22,routeLength,concrete);box(3.85,.02,-106,3.8,.22,routeLength,concrete);
+box(-3.85,.02,routeCenter,3.8,.22,routeLength,concrete);box(3.85,.02,routeCenter,3.8,.22,routeLength,concrete);
 for(const x of [-2.05,2.05])box(x,.15,-106,.13,.08,routeLength,gold);
 const tileRows=[];for(let z=routeStart;z>routeEnd;z-=1.1)for(const x of [-5.55,-4.65,4.65,5.55])tileRows.push([x,.145,z,.88,.025,.88]);instanced(new THREE.BoxGeometry(1,1,1),tile,tileRows);
 // high-detail repeating station columns: cylinder geometry with 32 radial segments
@@ -44,7 +44,7 @@ const ribs=[];for(let z=12;z>routeEnd;z-=6)ribs.push([0,6.05,z,13.7,.16,.22]);in
 for(let z=8;z>routeEnd;z-=28){const l=new THREE.PointLight(0xffd7a0,mobile?5:9,24,2);l.position.set(0,5.65,z);scene.add(l);box(0,6.05,z,.65,.08,1.7,mat(0xffe2b3,.3))}
  // signs and wall details
 function makeSign(text,z){const cv=document.createElement('canvas');cv.width=768;cv.height=180;const cx=cv.getContext('2d');cx.fillStyle='#172d38';cx.fillRect(0,0,768,180);cx.strokeStyle='#d9b16d';cx.lineWidth=8;cx.strokeRect(8,8,752,164);cx.fillStyle='#fff';cx.font='bold 62px sans-serif';cx.textAlign='center';cx.fillText(text,384,112);const tex=new THREE.CanvasTexture(cv);const board=box(-6.72,3.25,z, .08,1.55,5, new THREE.MeshStandardMaterial({map:tex,roughness:.55}));return board}
-makeSign('МЕТАЛЛУРГОВ',-18);makeSign('КРИВОЙ РОГ',-132);
+makeSign('МЕТАЛЛУРГОВ',-110);makeSign('КОЛЬЦЕВАЯ',-245);makeSign('ПЛОЩАДЬ ТРУДА',-380);
 for(let z=15;z>routeEnd;z-=18){box(6.82,2.5,z,.12,1.2,2.4,mat(0x35434a));}
 // Tram: detailed procedural model, smooth round wheels, bogies, front windscreen and doors
 const tram=new THREE.Group();scene.add(tram);tram.position.set(0,0,-5);
@@ -70,26 +70,25 @@ const el=id=>document.getElementById(id),stick=el('stick'),knob=el('knob');
 function setJoy(e){const r=stick.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),k=Math.min(1,38/len);joy={x:dx/38*k,y:dy/38*k};knob.style.left=(r.width/2-20+dx*k)+'px';knob.style.top=(r.height/2-20+dy*k)+'px'}
 stick.onpointerdown=e=>{stick.setPointerCapture(e.pointerId);setJoy(e)};stick.onpointermove=e=>{if(e.buttons||e.pressure)setJoy(e)};stick.onpointerup=stick.onpointercancel=()=>{joy={x:0,y:0};knob.style.left='30px';knob.style.top='30px'};
 el('run').onpointerdown=()=>running=true;el('run').onpointerup=el('run').onpointerleave=()=>running=false;
-function enterTram(){const dist=Math.hypot(player.x-tram.position.x,player.z-tram.position.z);if(dist>9){el('hint').textContent='Подойди ближе к трамваю (до 9 метров)';return}driving=true;velocity=0;document.body.classList.add('driving');el('hint').textContent='ХОД — тяга • ТОРМОЗ — замедление • ВЫЙТИ — выйти на остановке';yaw=0}
-el('ride').onclick=enterTram;el('leave').onclick=()=>{if(Math.abs(velocity)>0.3){el('hint').textContent='Сначала полностью останови трамвай';return}driving=false;document.body.classList.remove('driving');player.set(tram.position.x+2.8,0,tram.position.z+1);el('hint').textContent='Вы на платформе. Подойди к трамваю, чтобы снова зайти.'};
+let audioCtx=null,motorOsc=null,motorGain=null,soundReady=false;function startAudio(){if(soundReady)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=new AC();motorOsc=audioCtx.createOscillator();motorGain=audioCtx.createGain();motorOsc.type='sawtooth';motorOsc.frequency.value=48;motorGain.gain.value=0;motorOsc.connect(motorGain);motorGain.connect(audioCtx.destination);motorOsc.start();soundReady=true}function tone(freq,duration,volume=.12,type='sine'){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,audioCtx.currentTime);g.gain.setValueAtTime(volume,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration)}function bell(){tone(880,.42,.14);setTimeout(()=>tone(1175,.5,.11),120)}function announce(text){if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ru-RU';u.rate=.88;u.pitch=.9;speechSynthesis.speak(u)}}document.addEventListener('pointerdown',startAudio,{once:true});function enterTram(){const dist=Math.hypot(player.x-tram.position.x,player.z-tram.position.z);if(dist>9){el('hint').textContent='Подойди ближе к трамваю (до 9 метров)';return}driving=true;velocity=0;document.body.classList.add('driving');startAudio();bell();announce('Двери закрываются. Осторожно, двери закрываются. Следующая остановка — Металлургов.');el('hint').textContent='ХОД — тяга • ТОРМОЗ — замедление • ВЫЙТИ — выйти на остановке';yaw=0}
+el('ride').onclick=enterTram;el('leave').onclick=()=>{if(Math.abs(velocity)>0.3){el('hint').textContent='Сначала полностью останови трамвай';return}driving=false;document.body.classList.remove('driving');bell();announce('Остановка. Выход на платформу.');player.set(tram.position.x+2.8,0,tram.position.z+1);el('hint').textContent='Вы на платформе. Подойди к трамваю, чтобы снова зайти.'};
 for(const [id,fn] of [['throttle',v=>throttle=v],['brake',v=>braking=v]]){el(id).onpointerdown=e=>{e.preventDefault();fn(true);el(id).classList.add('active')};for(const ev of ['pointerup','pointercancel','pointerleave'])el(id).addEventListener(ev,()=>{fn(false);el(id).classList.remove('active')})}
 const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE'&&!driving)enterTram()});addEventListener('keyup',e=>keys[e.code]=false);
 let lookPointer=null,lastX=0,lastY=0;renderer.domElement.addEventListener('pointerdown',e=>{lookPointer=e.pointerId;lastX=e.clientX;lastY=e.clientY});addEventListener('pointerup',()=>lookPointer=null);renderer.domElement.addEventListener('pointermove',e=>{if(lookPointer===e.pointerId){yaw-=(e.clientX-lastX)*.004;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-lastY)*.003,-.65,.65);lastX=e.clientX;lastY=e.clientY}});
-const stations=[{z:-18,name:'МЕТАЛЛУРГОВ'},{z:-132,name:'КОЛЬЦЕВАЯ'}];let stationIndex=0,stopHold=0;
+const stations=[{z:-110,name:'МЕТАЛЛУРГОВ'},{z:-245,name:'КОЛЬЦЕВАЯ'},{z:-380,name:'ПЛОЩАДЬ ТРУДА'},{z:-495,name:'КРИВОЙ РОГ'}];let stationIndex=0,stopHold=0;
 function updateHUD(){el('speed').textContent=String(Math.round(Math.abs(velocity)*3.6)).padStart(2,'0');el('station').textContent='СТАНЦИЯ: '+(stations[stationIndex]?.name||'ПЕРЕГОН')}
 let progress=0;const status=el('status'),fill=el('fill'),pct=el('pct');function load(n,t){progress=n;fill.style.width=n+'%';pct.textContent=n+'%';status.textContent=t}
-load(22,'Геометрия тоннеля и платформ…');setTimeout(()=>load(48,'Детализация станции и освещение…'),180);setTimeout(()=>load(76,'Сборка трамвая и коллизии…'),380);setTimeout(()=>load(100,'Проверка маршрута завершена'),650);setTimeout(()=>el('loader').remove(),1050);
+load(18,'Построение тоннеля длиной более 500 метров…');setTimeout(()=>load(42,'Детализация платформ и четырёх станций…'),180);setTimeout(()=>load(68,'Озвучка, тяга и тормозная система…'),380);setTimeout(()=>load(100,'Проверка маршрута завершена'),650);setTimeout(()=>el('loader').remove(),1050);
 const clock=new THREE.Clock();let lastFrame=0;
 function animate(now=0){requestAnimationFrame(animate);if(mobile&&now-lastFrame<30)return;lastFrame=now;const dt=Math.min(clock.getDelta(),.04);
 if(!driving){const fwd=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,Math.sin(yaw));const sp=(running?5.1:2.7)*dt;const nx=player.x+right.x*joy.x*sp+fwd.x*(-joy.y)*sp,nz=player.z+right.z*joy.x*sp+fwd.z*(-joy.y)*sp;if(!overlaps(nx,player.z))player.x=THREE.MathUtils.clamp(nx,-6.1,6.1);if(!overlaps(player.x,nz))player.z=THREE.MathUtils.clamp(nz,routeEnd+2,routeStart-2);
 camera.position.set(player.x,1.68,player.z);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
 }else{
 const accelerating=throttle||keys['ArrowUp']||keys['KeyW'],stopping=braking||keys['ArrowDown']||keys['Space'];if(accelerating)velocity=Math.min(13.8,velocity+2.1*dt);else velocity=Math.max(0,velocity-.24*dt);if(stopping)velocity=Math.max(0,velocity-4.8*dt);
-let nextZ=tram.position.z-velocity*dt;
+const previousZ=tram.position.z;let nextZ=tram.position.z-velocity*dt;
 // Track end collision and platform stop markers
-if(nextZ<routeEnd+7){nextZ=routeEnd+7;velocity=0}
-tram.position.z=nextZ;tramZ=nextZ;
-if(stationIndex<stations.length&&Math.abs(tram.position.z-stations[stationIndex].z)<1.5&&velocity<2.2){velocity=0;stopHold=3;stationIndex++;updateHUD();el('hint').textContent='Остановка. Можно выйти на платформу.'}
+if(nextZ<routeEnd+7){nextZ=routeEnd+7;velocity=0}if(stationIndex<stations.length&&previousZ>stations[stationIndex].z&&nextZ<=stations[stationIndex].z){nextZ=stations[stationIndex].z+1.2;velocity=0;const arrived=stations[stationIndex];stationIndex++;updateHUD();bell();announce('Станция '+arrived.name+'. Осторожно, двери открываются.');el('hint').textContent='Прибытие: '+arrived.name+'. Трамвай остановлен — можно выйти.'}
+tram.position.z=nextZ;tramZ=nextZ;if(motorGain&&audioCtx){motorGain.gain.setTargetAtTime(driving?Math.min(.035,velocity/13.8*.035):0,audioCtx.currentTime,.18);motorOsc.frequency.setTargetAtTime(42+velocity*5,audioCtx.currentTime,.12)}
 camera.position.set(tram.position.x,2.72,tram.position.z-3.45);camera.rotation.order='YXZ';camera.rotation.set(-.02,0,0);
 }
 updateHUD();renderer.render(scene,camera)}
